@@ -11,10 +11,11 @@ import java.util.List;
 import it.polito.tdp.extflightdelays.model.Airline;
 import it.polito.tdp.extflightdelays.model.Airport;
 import it.polito.tdp.extflightdelays.model.Flight;
+import it.polito.tdp.extflightdelays.model.SimpleFlight;
 
 public class ExtFlightDelaysDAO {
 
-	public List<String> loadAllStates(){
+	public List<String> loadAllStates() {
 		String sql = "SELECT distinct(STATE) from airports";
 		List<String> result = new ArrayList<String>();
 
@@ -36,7 +37,7 @@ public class ExtFlightDelaysDAO {
 			throw new RuntimeException("Error Connection Database");
 		}
 	}
-	
+
 	public List<Airline> loadAllAirlines() {
 		String sql = "SELECT * from airlines";
 		List<Airline> result = new ArrayList<Airline>();
@@ -85,7 +86,33 @@ public class ExtFlightDelaysDAO {
 			throw new RuntimeException("Error Connection Database");
 		}
 	}
-	
+
+	public List<Airport> loadAllStateAirports(String state) {
+		String sql = "SELECT * FROM airports WHERE state=?";
+		List<Airport> result = new ArrayList<Airport>();
+
+		try {
+			Connection conn = ConnectDB.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setString(1, state);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				Airport airport = new Airport(rs.getInt("ID"), rs.getString("IATA_CODE"), rs.getString("AIRPORT"),
+						rs.getString("CITY"), rs.getString("STATE"), rs.getString("COUNTRY"), rs.getDouble("LATITUDE"),
+						rs.getDouble("LONGITUDE"), rs.getDouble("TIMEZONE_OFFSET"));
+				result.add(airport);
+			}
+
+			conn.close();
+			return result;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+	}
 
 	public List<Flight> loadAllFlights() {
 		String sql = "SELECT * FROM flights";
@@ -103,6 +130,30 @@ public class ExtFlightDelaysDAO {
 						rs.getTimestamp("SCHEDULED_DEPARTURE_DATE").toLocalDateTime(), rs.getDouble("DEPARTURE_DELAY"),
 						rs.getDouble("ELAPSED_TIME"), rs.getInt("DISTANCE"),
 						rs.getTimestamp("ARRIVAL_DATE").toLocalDateTime(), rs.getDouble("ARRIVAL_DELAY"));
+				result.add(flight);
+			}
+
+			conn.close();
+			return result;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+	}
+
+	public List<SimpleFlight> loadAllDistinctFlights() {
+		String sql = "SELECT DISTINCT TAIL_NUMBER, ORIGIN_AIRPORT_ID AS 'OID', DESTINATION_AIRPORT_ID AS 'DID' FROM flights";
+		List<SimpleFlight> result = new LinkedList<SimpleFlight>();
+
+		try {
+			Connection conn = ConnectDB.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				SimpleFlight flight = new SimpleFlight(rs.getInt("OID"), rs.getInt("DID"));
 				result.add(flight);
 			}
 
